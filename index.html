@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TRB Document Summarizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- LEFT RAIL -->
+    <aside class="rail">
+      <div class="rail-top">
+        <div class="brand">
+          <span class="brand-mark">TRB</span>
+          <div class="brand-text">
+            <span class="brand-name">TRB Document Summarizer</span>
+            <span class="brand-sub">Document Summarizer</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rail-section">
+        <p class="rail-label">01 — Upload</p>
+        <div id="dropzone" class="dropzone">
+          <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" hidden />
+          <div class="dropzone-scanline"></div>
+          <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 3v12m0-12 4 4m-4-4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="dz-title">Drop a file or click to browse</p>
+          <p class="dz-sub">PDF · DOCX · TXT · MD</p>
+        </div>
+        <p id="uploadError" class="error-text" hidden></p>
+      </div>
+
+      <div id="docMeta" class="rail-section index-card" hidden>
+        <p class="rail-label">02 — Document</p>
+        <div class="index-tab">
+          <span class="index-tab-icon">📄</span>
+          <div>
+            <p id="metaFilename" class="meta-filename">—</p>
+            <p id="metaWords" class="meta-words mono">—</p>
+          </div>
+        </div>
+        <button id="summarizeBtn" class="btn-primary">
+          <span>Generate Summary</span>
+        </button>
+      </div>
+</aside>
+
+    <!-- MAIN PAPER PANE -->
+    <main class="paper">
+
+      <div id="emptyState" class="empty-state">
+        <div class="empty-glyph">§</div>
+        <h1>Turn any document into understanding.</h1>
+        <p>Upload a PDF, Word file, or plain text on the left. TRB Document Summarizer reads it, extracts the
+          structure, and gives you a clear briefing — plus a chat assistant that can explain
+          any part of it in plain language.</p>
+      </div>
+
+      <div id="loadingState" class="loading-state" hidden>
+        <div class="scan-loader"><div class="scan-bar"></div></div>
+        <p id="loadingText">Reading your document…</p>
+      </div>
+
+      <div id="summaryState" class="summary-state" hidden>
+        <header class="summary-header">
+          <p class="mono eyebrow" id="docType">Document</p>
+          <h1 id="docTitle">Title</h1>
+          <p class="overview" id="docOverview">Overview</p>
+        </header>
+
+        <section class="doc-section" data-tab="I">
+          <h2><span class="tab-num mono">I</span> Key Topics</h2>
+          <ul id="keyTopics" class="chip-list"></ul>
+        </section>
+
+        <div class="two-col">
+          <section class="doc-section" data-tab="II">
+            <h2><span class="tab-num mono">II</span> Why It Matters</h2>
+            <p id="importanceText"></p>
+          </section>
+          <section class="doc-section" data-tab="III">
+            <h2><span class="tab-num mono">III</span> Why It's Used</h2>
+            <p id="whyUsedText"></p>
+          </section>
+        </div>
+
+        <div class="two-col">
+          <section class="doc-section" data-tab="IV">
+            <h2><span class="tab-num mono">IV</span> Benefits</h2>
+            <ul id="benefitsList" class="check-list"></ul>
+          </section>
+          <section class="doc-section" data-tab="V">
+            <h2><span class="tab-num mono">V</span> Use Cases</h2>
+            <ul id="useCasesList" class="check-list"></ul>
+          </section>
+        </div>
+
+        <section class="doc-section" data-tab="VI">
+          <h2><span class="tab-num mono">VI</span> Key Takeaways</h2>
+          <ol id="takeawaysList" class="takeaway-list"></ol>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- FLOATING CHAT (sticky-note style) -->
+  <div id="chatWidget" class="chat-widget collapsed">
+    <button id="chatToggle" class="chat-toggle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span id="chatToggleLabel">Ask about this document</span>
+    </button>
+
+    <div class="chat-panel">
+      <div class="chat-panel-header">
+        <div>
+          <p class="chat-title">Document Assistant</p>
+          <p class="chat-sub mono">grounded in your uploaded file</p>
+        </div>
+        <button id="chatClose" class="chat-close" aria-label="Close chat">✕</button>
+      </div>
+
+      <div id="chatMessages" class="chat-messages">
+        <div class="chat-msg bot">
+          <p>Hi! Upload and summarize a document first, then ask me things like
+          <em>"what is this topic?"</em>, <em>"why does this matter?"</em>, or
+          <em>"what are the benefits?"</em> — I'll answer using the document itself.</p>
+        </div>
+      </div>
+
+      <form id="chatForm" class="chat-input-row">
+        <input id="chatInput" type="text" placeholder="Ask a question about the document…" autocomplete="off" disabled />
+        <button type="submit" id="chatSend" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2 11 13" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 2 15 22l-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
